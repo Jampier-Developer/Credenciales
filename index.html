@@ -1,0 +1,95 @@
+
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Por Tu Seguridad</title>
+  <link rel="shortcut icon" href="img/Segurity.png" type="image/x-icon">
+    <link rel="stylesheet" href="private.css">
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="auth-box">
+            <div class="logo-container">
+                <div class="logo-icon">🔐</div>
+                <h1>Acceso Seguro</h1>
+                <p class="tagline">Gestión de credenciales protegidas</p>
+            </div>
+
+            <div class="auth-forms-container">
+                <!-- Formulario de Login -->
+                <form id="loginForm" class="form">
+                    <div class="input-group">
+                        <input type="password" id="password" placeholder=" " required>
+                        <label for="password">Contraseña</label>
+                        <span class="toggle-password" id="togglePassword">
+                            <i class="far fa-eye"></i>
+                        </span>
+                    </div>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-sign-in-alt"></i> Ingresar
+                    </button>
+                    <p class="auth-link">¿Primera vez? <a href="#" id="showRegister">Crear contraseña</a></p>
+                </form>
+
+                <!-- Formulario de Registro -->
+                <form id="registerForm" class="form">
+                    <div class="input-group">
+                        <input type="password" id="newPassword" placeholder=" " required>
+                        <label for="newPassword">Nueva Contraseña</label>
+                        <span class="toggle-password" id="toggleNewPassword">
+                            <i class="far fa-eye"></i>
+                        </span>
+                    </div>
+                    <div class="password-requirement">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Mínimo 8 caracteres</span>
+                    </div>
+                    <div class="input-group">
+                        <input type="password" id="confirmPassword" placeholder=" " required>
+                        <label for="confirmPassword">Confirmar Contraseña</label>
+                        <span class="toggle-password" id="toggleConfirmPassword">
+                            <i class="far fa-eye"></i>
+                        </span>
+                    </div>
+                    <div class="form-footer">
+                        <button type="button" class="btn-secondary" id="backToLogin">
+                            <i class="fas fa-arrow-left"></i> Volver
+                        </button>
+                        <button type="submit" class="btn-primary" id="registerBtn">
+                            <i class="fas fa-check"></i> Registrar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de carga -->
+    <div id="loadingModal" class="modal">
+        <div class="modal-content">
+            <div class="spinner"></div>
+            <p>Verificando...</p>
+        </div>
+    </div>
+
+    <!-- Notificación -->
+    <div id="notification" class="notification">
+        <div class="notification-content">
+            <span class="notification-icon"></span>
+            <span class="notification-message"></span>
+        </div>
+    </div>
+
+    <!-- Contador de bloqueo -->
+    <div id="blockTimer" class="block-timer">
+        <span id="timerText">00:00</span>
+    </div>
+
+    <script src="private.js"></script>
+</body>
+</html>

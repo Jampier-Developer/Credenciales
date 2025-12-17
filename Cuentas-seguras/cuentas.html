@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Gestor de Credenciales</title>
+    <link rel="shortcut icon" href="img2/Credenciales.png" type="image/x-icon">
+    <link rel="stylesheet" href="cuentas.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔐 Super Gestor de Credenciales</h1>
+            <h2 id="credentialCount">0 credenciales guardadas</h2>
+            <div class="actions">
+                <input type="text" id="searchInput" placeholder="Buscar...">
+                <select id="themeSelector">
+                    <option value="default">Azul</option>
+                    <option value="green">Verde</option>
+                    <option value="purple">Morado</option>
+                </select>
+                <button id="toggleTheme">🌙 Modo Oscuro</button>
+                <button id="exportBtn">📤 Exportar</button>
+            </div>
+        </header>
+
+        <form id="addCredentialForm">
+            <input type="text" id="appName" placeholder="Ej: Facebook, Banco, Netflix" required>
+            <input type="text" id="username" placeholder="Usuario/Email/Teléfono" required>
+            <input type="password" id="password" placeholder="Contraseña" required>
+            <div class="password-strength">
+                <span id="strengthIndicator">Seguridad: Muy débil</span>
+                <progress id="strengthMeter" max="4" value="0"></progress>
+            </div>
+            <select id="category">
+                <!-- Las opciones se llenarán dinámicamente desde JavaScript -->
+            </select>
+            <button type="submit">💾 Guardar Credencial</button>
+        </form>
+
+        <div id="credentialsList">
+            <!-- Las credenciales se cargarán aquí dinámicamente -->
+        </div>
+    </div>
+
+    <!-- Modal de Confirmación -->
+    <div id="confirmationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Confirmar acción</h3>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="modalMessage">¿Estás seguro que deseas eliminar esta credencial?</p>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelBtn" class="modal-btn cancel-btn">Cancelar</button>
+                <button id="confirmBtn" class="modal-btn confirm-btn">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Carga -->
+    <div id="loadingModal" class="modal">
+        <div class="modal-content loading-content">
+            <div class="spinner"></div>
+            <p>Procesando...</p>
+        </div>
+    </div>
+
+    <script src="cuentas.js"></script>
+</body>
+</html>

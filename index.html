@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+<meta name="theme-color" content="#07060c" />
+<title>JampierDev · Bóveda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="img/Seguridad.png">
+<link rel="apple-touch-icon" href="img/Seguridad.png">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="bg-fx"><div class="grid"></div><div class="orb g"></div><div class="orb p"></div><div class="orb p2"></div></div>
+
+<!-- ===================== GATE ===================== -->
+<div id="gate" class="center-screen">
+  <div class="gate">
+    <div class="brand">
+      <div class="mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="url(#gp)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <defs><linearGradient id="gp" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f2cf72"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs>
+          <rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r="1.4"/>
+        </svg>
+      </div>
+      <h1>JampierDev</h1>
+      <div class="tag">Bóveda privada</div>
+    </div>
+
+    <!-- SETUP (first run) -->
+    <div id="setupPanel" class="panel hidden">
+      <h2>Crea tu contraseña maestra</h2>
+      <p class="sub">Es la llave que cifra TODO. No se guarda en ningún lado, así que si la olvidas no hay forma de recuperar tus datos. Elige algo largo y que solo tú sepas.</p>
+      <div class="field">
+        <label>Contraseña maestra</label>
+        <div class="inp-wrap">
+          <input id="setupPw" class="inp pw" type="password" placeholder="••••••••••••" autocomplete="new-password">
+          <button class="eye" data-eye="setupPw" type="button"></button>
+        </div>
+        <div class="meter"><i id="setupMeter"></i></div>
+        <div class="meter-label" id="setupMeterLabel">Fuerza: —</div>
+      </div>
+      <div class="field">
+        <label>Repite la contraseña</label>
+        <div class="inp-wrap">
+          <input id="setupPw2" class="inp pw" type="password" placeholder="••••••••••••" autocomplete="new-password">
+          <button class="eye" data-eye="setupPw2" type="button"></button>
+        </div>
+      </div>
+      <button id="setupBtn" class="btn btn-primary">Crear bóveda</button>
+      <div id="setupMsg" class="gate-msg"></div>
+    </div>
+
+    <!-- UNLOCK -->
+    <div id="unlockPanel" class="panel hidden">
+      <h2>Bienvenido de vuelta</h2>
+      <p class="sub">Ingresa tu contraseña maestra para descifrar tu bóveda.</p>
+      <div class="field">
+        <label>Contraseña maestra</label>
+        <div class="inp-wrap">
+          <input id="unlockPw" class="inp pw" type="password" placeholder="••••••••••••" autocomplete="current-password">
+          <button class="eye" data-eye="unlockPw" type="button"></button>
+        </div>
+      </div>
+      <button id="unlockBtn" class="btn btn-primary">Desbloquear</button>
+      <div id="unlockMsg" class="gate-msg"></div>
+      <div id="attemptsHint" class="attempts hidden">Intentos restantes: <b id="attemptsLeft">5</b></div>
+    </div>
+
+    <!-- LOCKOUT -->
+    <div id="lockoutPanel" class="panel hidden">
+      <h2 style="color:var(--danger)">Acceso bloqueado</h2>
+      <p class="sub">Demasiados intentos fallidos. Espera a que termine el contador para volver a intentar.</p>
+      <div class="lockout">
+        <div class="count" id="lockoutCount">05:00</div>
+        <p>Bloqueo temporal de seguridad</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== APP ===================== -->
+<div id="app" class="app">
+  <header class="topbar">
+    <div class="logo"><div class="dot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div><span>JampierDev</span></div>
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="searchInput" type="text" placeholder="Buscar cuentas…">
+    </div>
+    <div class="tb-actions">
+      <button class="icon-btn" id="lockBtn" title="Bloquear bóveda"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></button>
+      <button class="icon-btn" id="menuBtn" title="Más"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>
+      <button class="icon-btn add" id="addBtnTop" title="Agregar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+    </div>
+  </header>
+
+  <main>
+    <div class="chips" id="chips"></div>
+    <div id="grid" class="grid"></div>
+    <div id="empty" class="empty hidden">
+      <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></div>
+      <h3>Tu bóveda está vacía</h3>
+      <p>Empieza guardando tu primera cuenta: correos, redes, bancos, streaming… todo cifrado solo para ti.</p>
+      <button class="btn btn-primary" id="addBtnEmpty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg> Agregar cuenta</button>
+    </div>
+  </main>
+  <button class="fab" id="fab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script src="js/app.js"></script>
+</body>
+</html>

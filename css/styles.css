@@ -387,6 +387,15 @@ textarea.inp{resize:vertical;min-height:74px;line-height:1.5}
 .list-actions{display:flex;align-items:center;gap:3px;flex-shrink:0}
 .list-pw-dots{font-size:11px;letter-spacing:.16em;color:var(--txt-dim);max-width:70px;overflow:hidden;white-space:nowrap}
 
+/* ===== export choice ===== */
+.export-opt{display:flex;align-items:center;gap:14px;padding:16px;border-radius:14px;border:1px solid var(--line);background:rgba(167,139,250,.04);text-align:left;transition:.18s;width:100%}
+.export-opt:hover{border-color:var(--line-strong);background:rgba(167,139,250,.08);transform:translateY(-1px)}
+.export-opt-icon{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;flex-shrink:0}
+.export-opt-icon svg{width:22px;height:22px}
+.export-opt-text{display:flex;flex-direction:column;gap:4px}
+.export-opt-text strong{font-size:15px;font-weight:600;color:var(--txt)}
+.export-opt-text span{font-size:12px;color:var(--txt-dim);line-height:1.4}
+
 /* ===== light theme ===== */
 [data-theme="light"]{
   --bg:#f0edf8;--bg-2:#e8e2f5;
@@ -422,6 +431,8 @@ textarea.inp{resize:vertical;min-height:74px;line-height:1.5}
 [data-theme="light"] .notes-row{border-top-color:rgba(139,92,246,.1)}
 [data-theme="light"] .card-foot{border-top-color:rgba(139,92,246,.14)}
 [data-theme="light"] .list-card{background:#fff;border-color:rgba(139,92,246,.22);box-shadow:0 2px 10px rgba(80,60,160,.08)}
+[data-theme="light"] .export-opt{background:rgba(139,92,246,.05);border-color:rgba(139,92,246,.2)}
+[data-theme="light"] .export-opt:hover{background:rgba(139,92,246,.1)}
 
 /* mobile tweaks for new buttons */
 @media(max-width:680px){

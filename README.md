@@ -29,6 +29,7 @@ Gestor de contraseñas privado, local y cifrado. Sin backend, sin cuentas, sin s
 - Modal de confirmación de borrado centrado en todas las pantallas (no más bottom sheet en móvil)
 - **Campos obligatorios**: Nombre, Usuario y Contraseña son requeridos al crear/editar una cuenta
 - **Fecha de vencimiento solo en Bancos**: el campo de expiración solo aparece al seleccionar la categoría Bancos
+- **Exportación doble**: al exportar aparece un modal para elegir entre respaldo cifrado (seguro, solo restaurable en la app) o exportación legible (JSON en texto plano para leer en cualquier editor)
 - **Tema claro mejorado**: chips, tarjetas, sort buttons y topbar con contraste correcto
 - 100% offline — funciona sin conexión a internet
 - Invisible para buscadores (noindex, robots.txt, X-Robots-Tag)

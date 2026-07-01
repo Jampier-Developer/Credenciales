@@ -622,20 +622,65 @@ function showPinModal(title, subtitle, onSuccess){
   $("#pinInput").addEventListener("keydown",e=>{ if(e.key==="Enter") confirm(); });
 }
 
-async function exportVault(){
+function exportVault(){
   $("#menuPop")?.remove();
+  const ov=document.createElement("div"); ov.className="overlay"; ov.id="exportChoiceOv";
+  ov.innerHTML=`
+    <div class="modal" style="max-width:420px">
+      <div class="modal-head"><h2>Exportar bóveda</h2><button class="x" id="exportChoiceClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;padding-bottom:24px">
+        <button class="export-opt" id="exportEncBtn">
+          <div class="export-opt-icon" style="background:rgba(167,139,250,.15);color:var(--purple)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+          <div class="export-opt-text">
+            <strong>Exportar cifrado</strong>
+            <span>Respaldo seguro — solo se abre con tu contraseña maestra en la app</span>
+          </div>
+        </button>
+        <button class="export-opt" id="exportPlainBtn">
+          <div class="export-opt-icon" style="background:rgba(233,184,76,.15);color:var(--gold)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg></div>
+          <div class="export-opt-text">
+            <strong>Exportar legible</strong>
+            <span>JSON con todos tus datos en texto plano — ábrelo en cualquier editor</span>
+          </div>
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+  const close=()=>ov.remove();
+  $("#exportChoiceClose").onclick=close;
+  $("#exportEncBtn").onclick=()=>{ close(); exportEncrypted(); };
+  $("#exportPlainBtn").onclick=()=>{ close(); exportPlain(); };
+}
+function exportEncrypted(){
   showPinModal(
-    "Exportar respaldo",
+    "Exportar respaldo cifrado",
     "Ingresa la contraseña de respaldo para autorizar la descarga.",
     async ()=>{
-      const payload = { v:1, salt:Store.get(K.salt), vault:Store.get(K.vault), exportedAt:new Date().toISOString() };
-      const blob = new Blob([JSON.stringify(payload,null,2)], {type:"application/json"});
+      const payload={v:1,salt:Store.get(K.salt),vault:Store.get(K.vault),exportedAt:new Date().toISOString()};
+      const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
       const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
       a.download="jampierdev-respaldo-"+new Date().toISOString().slice(0,10)+".json"; a.click();
       URL.revokeObjectURL(a.href);
       toast("Respaldo cifrado descargado");
     }
   );
+}
+function exportPlain(){
+  const payload={
+    exportedAt:new Date().toISOString(),
+    total:entries.length,
+    accounts:entries.map(e=>({
+      title:e.title, category:CAT_LABEL[e.category]||e.category,
+      username:e.username, password:e.password,
+      url:e.url||"", notes:e.notes||"",
+      expiresAt:e.expiresAt||"", favorite:e.favorite||false
+    }))
+  };
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="jampierdev-legible-"+new Date().toISOString().slice(0,10)+".json"; a.click();
+  URL.revokeObjectURL(a.href);
+  toast("Exportación legible descargada");
 }
 function importVault(){
   $("#menuPop")?.remove();

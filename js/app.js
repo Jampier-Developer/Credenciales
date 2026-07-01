@@ -29,9 +29,28 @@ async function deriveKey(pw, salt){
   const mat = await crypto.subtle.importKey("raw", enc.encode(pw), "PBKDF2", false, ["deriveKey"]);
   return crypto.subtle.deriveKey(
     { name:"PBKDF2", salt, iterations:250000, hash:"SHA-256" },
-    mat, { name:"AES-GCM", length:256 }, false, ["encrypt","decrypt"]
+    mat, { name:"AES-GCM", length:256 }, true, ["encrypt","decrypt"]
   );
 }
+const SK = "nox_sk";
+async function saveSession(key){
+  try{
+    const raw = await crypto.subtle.exportKey("raw", key);
+    sessionStorage.setItem(SK, b64.to(raw));
+  }catch(_){}
+}
+function clearSession(){ sessionStorage.removeItem(SK); }
+async function tryAutoSession(){
+  const sk = sessionStorage.getItem(SK);
+  if(!sk || !Store.get(K.vault)) return false;
+  try{
+    const key = await crypto.subtle.importKey("raw", b64.from(sk), {name:"AES-GCM",length:256}, true, ["encrypt","decrypt"]);
+    const decrypted = await decryptVault(key, Store.get(K.vault));
+    cryptoKey = key; entries = decrypted;
+    return true;
+  }catch(_){ clearSession(); return false; }
+}
+
 async function encryptVault(key, obj){
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const ct = await crypto.subtle.encrypt({name:"AES-GCM", iv}, key, enc.encode(JSON.stringify(obj)));
@@ -128,12 +147,15 @@ function showGatePanel(id){
   ["setupPanel","unlockPanel","lockoutPanel"].forEach(p=>$("#"+p).classList.add("hidden"));
   $("#"+id).classList.remove("hidden");
 }
-function initGate(){
+async function initGate(){
   $("#gate").classList.remove("hidden");
   $("#app").style.display="none";
   const lockUntil = +Store.get(K.lock)||0;
   if(Date.now() < lockUntil){ startLockout(lockUntil); return; }
-  if(Store.get(K.vault)){ showGatePanel("unlockPanel"); setTimeout(()=>$("#unlockPw").focus(),300); refreshAttempts(); }
+  if(Store.get(K.vault)){
+    if(await tryAutoSession()){ openApp(); return; }
+    showGatePanel("unlockPanel"); setTimeout(()=>$("#unlockPw").focus(),300); refreshAttempts();
+  }
   else { showGatePanel("setupPanel"); setTimeout(()=>$("#setupPw").focus(),300); }
 }
 function refreshAttempts(){
@@ -190,6 +212,7 @@ $("#setupBtn").addEventListener("click", async ()=>{
     Store.set(K.salt, b64.to(salt));
     Store.set(K.vault, await encryptVault(cryptoKey, entries));
     Store.del(K.fails); Store.del(K.lock);
+    await saveSession(cryptoKey);
     msg.classList.add("ok"); msg.textContent="¡Bóveda creada!";
     setTimeout(openApp, 450);
   }catch(e){ msg.classList.add("err"); msg.textContent="Error al crear la bóveda."; btn.disabled=false; btn.textContent="Crear bóveda"; }
@@ -235,6 +258,7 @@ async function attemptUnlock(){
   if(ok){
     entries = decrypted; cryptoKey = keyRef;
     Store.del(K.fails);
+    await saveSession(cryptoKey);
     msg.textContent="";
     unlockBtnSuccess(btn);
     await sleep(750);
@@ -288,6 +312,7 @@ function openApp(){
 function lock(){
   cryptoKey=null; entries=[];
   clearTimeout(idleTimer);
+  clearSession();
   $("#unlockPw").value=""; $("#unlockMsg").textContent="";
   unlockBtnReset($("#unlockBtn")); delete $("#unlockBtn").dataset.busy;
   $("#menuPop")?.remove();

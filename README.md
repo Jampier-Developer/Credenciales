@@ -11,6 +11,7 @@ Gestor de contraseñas privado, local y cifrado. Sin backend, sin cuentas, sin s
 - Cierre de sesión automático por 5 minutos de inactividad con modal informativo
 - El formulario de nueva cuenta no se cierra al hacer clic afuera
 - Categorías: Correos, Redes, Bancos, Streaming, Otros
+- **Sesión persistente entre recargas**: F5 o recargar no cierra la sesión — solo cerrar la pestaña o bloquear manualmente la cierra
 - **Cuentas favoritas**: marca con estrella y filtra por favoritas
 - **Ordenar**: por fecha, A–Z o categoría
 - **Historial de contraseñas**: guarda las últimas 3 por cuenta con opción a restaurar
@@ -25,6 +26,7 @@ Gestor de contraseñas privado, local y cifrado. Sin backend, sin cuentas, sin s
 - Exportar e importar respaldo cifrado (JSON) con contraseña de respaldo protegida
 - Cambiar contraseña maestra sin perder datos
 - Responsive completo: móvil, tablet, desktop e iOS (safe-area, notch, home indicator)
+- Modal de confirmación de borrado centrado en todas las pantallas
 - 100% offline — funciona sin conexión a internet
 - Invisible para buscadores (noindex, robots.txt, X-Robots-Tag)
 
@@ -33,6 +35,7 @@ Gestor de contraseñas privado, local y cifrado. Sin backend, sin cuentas, sin s
 - HTML5 + CSS3 + JavaScript Vanilla
 - Web Crypto API (nativa del navegador)
 - localStorage para persistencia local
+- sessionStorage para mantener sesión entre recargas
 
 ## Cómo usar
 
@@ -46,7 +49,8 @@ Gestor de contraseñas privado, local y cifrado. Sin backend, sin cuentas, sin s
 - Los datos se cifran con AES-GCM 256-bit antes de guardarse en localStorage
 - La clave se deriva con PBKDF2 usando un salt aleatorio distinto por bóveda
 - La contraseña maestra vive solo en memoria mientras la sesión está activa
-- Al bloquear o cerrar la sesión, la clave se elimina de memoria
+- La clave de sesión se guarda en sessionStorage (se borra al cerrar la pestaña)
+- Al bloquear o cerrar la sesión, la clave se elimina de memoria y sessionStorage
 - Exportar/Importar protegido con contraseña adicional (hash SHA-256, no visible en código)
 - Invisible para motores de búsqueda
 

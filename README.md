@@ -27,6 +27,8 @@ Gestor de contraseñas privado, local y cifrado. Sin backend, sin cuentas, sin s
 - Cambiar contraseña maestra sin perder datos
 - Responsive completo: móvil, tablet, desktop e iOS (safe-area, notch, home indicator)
 - Modal de confirmación de borrado centrado en todas las pantallas (no más bottom sheet en móvil)
+- **Campos obligatorios**: Nombre, Usuario y Contraseña son requeridos al crear/editar una cuenta
+- **Fecha de vencimiento solo en Bancos**: el campo de expiración solo aparece al seleccionar la categoría Bancos
 - **Tema claro mejorado**: chips, tarjetas, sort buttons y topbar con contraste correcto
 - 100% offline — funciona sin conexión a internet
 - Invisible para buscadores (noindex, robots.txt, X-Robots-Tag)

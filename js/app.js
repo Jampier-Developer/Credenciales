@@ -456,8 +456,8 @@ function openModal(id){
       <div class="modal-body">
         <div class="field"><label>Categoría</label><div class="cat-pick" id="catPick"></div></div>
         <div class="field"><label>Nombre / Título *</label><input id="fTitle" class="inp" placeholder="Ej: Gmail personal, Bancolombia…" value="${e?esc(e.title):""}"></div>
-        <div class="field"><label>Usuario / Correo / Teléfono</label><input id="fUser" class="inp" placeholder="correo@ejemplo.com  ·  +57…" value="${e?esc(e.username):""}"></div>
-        <div class="field"><label>Contraseña / PIN</label>
+        <div class="field"><label>Usuario / Correo / Teléfono *</label><input id="fUser" class="inp" placeholder="correo@ejemplo.com  ·  +57…" value="${e?esc(e.username):""}"></div>
+        <div class="field"><label>Contraseña / PIN *</label>
           <div class="inp-wrap">
             <input id="fPass" class="inp pw" type="password" placeholder="••••••••" value="${e?esc(e.password):""}">
             <button class="eye" data-eye="fPass" type="button">${ICON.eyeOpen}</button>
@@ -469,7 +469,7 @@ function openModal(id){
         </div>
         <div class="field"><label>Enlace / Sitio (opcional)</label><input id="fUrl" class="inp" placeholder="facebook.com" value="${e?esc(e.url):""}"></div>
         <div class="field"><label>Notas (N° de cuenta, recuperación…)</label><textarea id="fNotes" class="inp" placeholder="Información extra, segura y privada">${e?esc(e.notes):""}</textarea></div>
-        <div class="field"><label>Fecha de vencimiento (opcional)</label><input id="fExpiry" class="inp" type="date" value="${e&&e.expiresAt?e.expiresAt:""}"></div>
+        <div class="field ${pickedCat==='bank'?'':'hidden'}" id="fExpiryField"><label>Fecha de vencimiento (opcional)</label><input id="fExpiry" class="inp" type="date" value="${e&&e.expiresAt?e.expiresAt:""}"></div>
         ${id&&e&&e.passwordHistory&&e.passwordHistory.length?`<div class="field"><label>Historial de contraseñas</label><div class="pw-history">${e.passwordHistory.map(p=>`<div class="pw-hist-row"><span class="rv dots" style="flex:1;font-size:13px">${"•".repeat(Math.min(12,p.length))}</span><button class="mini hist-restore" data-pw="${esc(p)}" title="Restaurar">${ICON.edit}</button></div>`).join("")}</div></div>`:""}
       </div>
       <div class="modal-foot">
@@ -481,7 +481,12 @@ function openModal(id){
 
   const cp = $("#catPick");
   cp.innerHTML = CATS.map(c=>`<button class="cat-opt ${c.id===pickedCat?'sel':''}" data-cat="${c.id}">${ICON[c.id]}<span>${c.label}</span></button>`).join("");
-  cp.querySelectorAll(".cat-opt").forEach(b=>b.onclick=()=>{ pickedCat=b.dataset.cat; cp.querySelectorAll(".cat-opt").forEach(x=>x.classList.toggle("sel",x===b)); });
+  cp.querySelectorAll(".cat-opt").forEach(b=>b.onclick=()=>{
+    pickedCat=b.dataset.cat;
+    cp.querySelectorAll(".cat-opt").forEach(x=>x.classList.toggle("sel",x===b));
+    $("#fExpiryField").classList.toggle("hidden", pickedCat!=="bank");
+    if(pickedCat!=="bank") $("#fExpiry").value="";
+  });
 
   document.querySelectorAll(".hist-restore").forEach(b=>b.onclick=()=>{ $("#fPass").value=b.dataset.pw; $("#fPass").type="text"; $("#fPass").parentElement.querySelector(".eye").innerHTML=ICON.eyeOff; toast("Contraseña restaurada del historial","info"); });
   $("#genBtn").onclick = ()=>{ const p=genPassword(18); $("#fPass").value=p; $("#fPass").type="text"; $("#fPass").parentElement.querySelector(".eye").innerHTML=ICON.eyeOff; toast("Contraseña generada"); };
@@ -501,9 +506,12 @@ function genPassword(len){
 async function saveEntry(){
   const title=$("#fTitle").value.trim();
   if(!title){ toast("El nombre es obligatorio","err"); $("#fTitle").focus(); return; }
+  const username=$("#fUser").value.trim();
+  if(!username){ toast("El usuario / correo es obligatorio","err"); $("#fUser").focus(); return; }
+  const password=$("#fPass").value;
+  if(!password){ toast("La contraseña es obligatoria","err"); $("#fPass").focus(); return; }
   const data={
-    category:pickedCat, title,
-    username:$("#fUser").value.trim(), password:$("#fPass").value,
+    category:pickedCat, title, username, password,
     url:$("#fUrl").value.trim(), notes:$("#fNotes").value.trim(),
     expiresAt:$("#fExpiry").value||"",
     updatedAt:Date.now()

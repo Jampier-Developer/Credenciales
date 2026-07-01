@@ -280,7 +280,6 @@ function openApp(){
   initSortBar();
   applyTheme(currentTheme);
   applyView(viewMode);
-  render();
   resetIdle();
   if(!Store.persistent){
     setTimeout(()=>toast("Vista previa: aquí los datos no se guardan al recargar. En GitHub Pages o local sí.","info"),700);
@@ -344,7 +343,7 @@ function render(){
 
   if(entries.length===0){ grid.innerHTML=""; empty.classList.remove("hidden"); return; }
   empty.classList.add("hidden");
-  if(list.length===0){ grid.innerHTML=`<div class="empty" style="${viewMode==="list"?"":"grid-column:1/-1"}padding:50px 20px"><h3>Sin resultados</h3><p>No hay cuentas que coincidan.</p></div>`; return; }
+  if(list.length===0){ grid.innerHTML=`<div class="empty" style="${viewMode==="list"?"":"grid-column:1/-1;"}padding:50px 20px"><h3>Sin resultados</h3><p>No hay cuentas que coincidan.</p></div>`; return; }
 
   if(viewMode==="list"){
     grid.innerHTML=list.map((e,i)=>{
@@ -358,7 +357,7 @@ function render(){
           <span class="list-sub">${CAT_LABEL[e.category]}${e.username?" · "+esc(e.username):""}${exp?` · <span class="${exp.cls}">${exp.label}</span>`:""}</span>
         </div>
         <div class="list-actions">
-          ${e.password?`<span class="list-pw-dots" data-pw="${esc(e.password)}">${pwDots}</span><button class="mini" data-reveal title="Ver">${ICON.eyeOpen}</button><button class="mini" data-copy="${esc(e.password)}" data-sensitive="1" title="Copiar clave">${ICON.copy}</button>`:""}
+          ${e.password?`<span class="dots list-pw-dots" data-pw="${esc(e.password)}">${pwDots}</span><button class="mini" data-reveal title="Ver">${ICON.eyeOpen}</button><button class="mini" data-copy="${esc(e.password)}" data-sensitive="1" title="Copiar clave">${ICON.copy}</button>`:""}
           <button class="mini" data-edit="${e.id}" title="Editar">${ICON.edit}</button>
           <button class="mini" data-del="${e.id}" title="Borrar" style="color:var(--danger-soft)">${ICON.trash}</button>
         </div>
@@ -390,8 +389,17 @@ function render(){
   grid.querySelectorAll("[data-copy]").forEach(b=>b.onclick=()=>copy(b.dataset.copy,b.dataset.sensitive==="1"));
   grid.querySelectorAll("[data-reveal]").forEach(b=>b.onclick=()=>{
     const span=b.parentElement.querySelector("[data-pw]");
-    if(span.dataset.shown){span.textContent="•".repeat(Math.min(12,Math.max(8,span.dataset.pw.length)));delete span.dataset.shown;span.classList.add("dots");b.innerHTML=ICON.eyeOpen;}
-    else{span.textContent=span.dataset.pw;span.dataset.shown="1";span.classList.remove("dots");b.innerHTML=ICON.eyeOff;}
+    if(span.dataset.shown){
+      span.textContent="•".repeat(Math.min(12,Math.max(8,span.dataset.pw.length)));
+      delete span.dataset.shown; span.classList.add("dots");
+      span.style.maxWidth=""; span.style.letterSpacing="";
+      b.innerHTML=ICON.eyeOpen;
+    } else {
+      span.textContent=span.dataset.pw; span.dataset.shown="1";
+      span.classList.remove("dots");
+      span.style.maxWidth="none"; span.style.letterSpacing="normal";
+      b.innerHTML=ICON.eyeOff;
+    }
   });
   grid.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openModal(b.dataset.edit));
   grid.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>confirmDelete(b.dataset.del));

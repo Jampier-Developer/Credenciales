@@ -11,9 +11,18 @@ Gestor de contraseñas privado, local y cifrado. Sin backend, sin cuentas, sin s
 - Cierre de sesión automático por 5 minutos de inactividad con modal informativo
 - El formulario de nueva cuenta no se cierra al hacer clic afuera (sin pérdida de datos)
 - Categorías: Correos, Redes, Bancos, Streaming, Otros
+- **Cuentas favoritas**: marca con estrella y filtra por favoritas
+- **Ordenar**: por fecha, A–Z o categoría
+- **Historial de contraseñas**: guarda las últimas 3 por cuenta con opción a restaurar
+- **Fecha de vencimiento**: alerta visual en rojo/amarillo cuando se acerca o ya venció
+- **Vista cuadrícula o lista**: alterna entre tarjetas y filas compactas
+- **Tema claro/oscuro**: toggle con botón, se guarda tu preferencia
+- **Pantalla completa**: botón en el topbar
+- **Contador de cuentas**: visible en el topbar
+- **Doble clic en usuario** para copiarlo (vista cuadrícula)
 - Generador de contraseñas seguras de 18 caracteres
 - Copiar contraseñas al portapapeles (auto-borra a los 30s)
-- Exportar e importar respaldo cifrado (JSON)
+- Exportar e importar respaldo cifrado (JSON) con contraseña de respaldo
 - Cambiar contraseña maestra sin perder datos
 - Diseño responsive — funciona en móvil, tablet y desktop
 - 100% offline — funciona sin conexión a internet
@@ -38,6 +47,7 @@ Gestor de contraseñas privado, local y cifrado. Sin backend, sin cuentas, sin s
 - La clave se deriva con PBKDF2 usando un salt aleatorio distinto por bóveda
 - La contraseña maestra vive solo en memoria mientras la sesión está activa
 - Al bloquear o cerrar la sesión, la clave se elimina de memoria
+- Exportar/Importar protegido con contraseña adicional (hash SHA-256, no visible en el código)
 - Invisible para motores de búsqueda
 
 ## Instalación local

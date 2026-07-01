@@ -13,6 +13,8 @@ const Store = (() => {
 })();
 
 const K = { vault:"nox_vault", salt:"nox_salt", fails:"nox_fails", lock:"nox_lock" };
+const _BKH = "e85a60f359ed1eb5adfa4566018515973ac970bf7549e2d046e88346a3575009";
+async function _vp(pw){ const b=await crypto.subtle.digest("SHA-256",enc.encode(pw)); return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join("")===_BKH; }
 const MAX_ATTEMPTS = 5;
 const LOCK_MS = 5*60*1000;       // 5 minutos
 const IDLE_MS = 5*60*1000;       // auto-bloqueo por inactividad
@@ -459,38 +461,89 @@ $("#menuBtn").onclick = (ev)=>{
 };
 document.addEventListener("click", e=>{ if($("#menuPop") && !e.target.closest("#menuPop") && !e.target.closest("#menuBtn")) $("#menuPop").remove(); });
 
+function showPinModal(title, subtitle, onSuccess){
+  const ov=document.createElement("div"); ov.className="overlay"; ov.id="pinOverlay";
+  ov.innerHTML=`
+    <div class="modal" style="max-width:400px">
+      <div class="modal-head">
+        <h2>${title}</h2>
+        <button class="x" id="pinClose"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:13px;color:var(--txt-dim);margin-bottom:18px;line-height:1.5">${subtitle}</p>
+        <div class="field">
+          <label>Contraseña de respaldo</label>
+          <div class="inp-wrap">
+            <input id="pinInput" class="inp pw" type="password" placeholder="••••••••••••" autocomplete="off">
+            <button class="eye" data-eye="pinInput" type="button">${ICON.eyeOpen}</button>
+          </div>
+          <div id="pinMsg" style="font-size:13px;margin-top:10px;color:var(--danger-soft);min-height:18px"></div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" id="pinCancel">Cancelar</button>
+        <button class="btn btn-primary" id="pinOk">Confirmar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+  const close=()=>ov.remove();
+  $("#pinClose").onclick=close; $("#pinCancel").onclick=close;
+  setTimeout(()=>$("#pinInput").focus(),100);
+  const confirm=async()=>{
+    const val=$("#pinInput").value;
+    if(!val){ $("#pinMsg").textContent="Ingresa la contraseña."; return; }
+    const ok=await _vp(val);
+    if(!ok){ $("#pinMsg").textContent="Contraseña incorrecta."; $("#pinInput").value=""; $("#pinInput").focus(); return; }
+    close(); onSuccess();
+  };
+  $("#pinOk").onclick=confirm;
+  $("#pinInput").addEventListener("keydown",e=>{ if(e.key==="Enter") confirm(); });
+}
+
 async function exportVault(){
   $("#menuPop")?.remove();
-  const payload = { v:1, salt:Store.get(K.salt), vault:Store.get(K.vault), exportedAt:new Date().toISOString() };
-  const blob = new Blob([JSON.stringify(payload,null,2)], {type:"application/json"});
-  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
-  a.download="jampierdev-respaldo-"+new Date().toISOString().slice(0,10)+".json"; a.click();
-  URL.revokeObjectURL(a.href);
-  toast("Respaldo cifrado descargado");
+  showPinModal(
+    "Exportar respaldo",
+    "Ingresa la contraseña de respaldo para autorizar la descarga.",
+    async ()=>{
+      const payload = { v:1, salt:Store.get(K.salt), vault:Store.get(K.vault), exportedAt:new Date().toISOString() };
+      const blob = new Blob([JSON.stringify(payload,null,2)], {type:"application/json"});
+      const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+      a.download="jampierdev-respaldo-"+new Date().toISOString().slice(0,10)+".json"; a.click();
+      URL.revokeObjectURL(a.href);
+      toast("Respaldo cifrado descargado");
+    }
+  );
 }
 function importVault(){
   $("#menuPop")?.remove();
-  const inp=document.createElement("input"); inp.type="file"; inp.accept="application/json,.json";
-  inp.onchange=async ()=>{
-    const file=inp.files[0]; if(!file) return;
-    try{
-      const data=JSON.parse(await file.text());
-      if(!data.salt||!data.vault) throw 0;
-      const ok = await new Promise(res=>{
-        const ov=document.createElement("div"); ov.className="overlay";
-        ov.innerHTML=`<div class="modal" style="max-width:420px"><div class="modal-body"><h2 style="font-family:'Syne',sans-serif;font-size:19px;margin-bottom:10px">Importar respaldo</h2><p style="color:var(--txt-dim);font-size:14px;line-height:1.5;margin-bottom:18px">Esto reemplazará tu bóveda actual por la del archivo. Necesitarás la contraseña maestra de ESE respaldo para abrirlo.</p></div><div class="modal-foot"><button class="btn btn-ghost" id="iC">Cancelar</button><button class="btn btn-primary" id="iO">Reemplazar</button></div></div>`;
-        document.body.appendChild(ov);
-        ov.querySelector("#iC").onclick=()=>{ov.remove();res(false)};
-        ov.querySelector("#iO").onclick=()=>{ov.remove();res(true)};
-      });
-      if(!ok) return;
-      Store.set(K.salt, data.salt); Store.set(K.vault, data.vault);
-      Store.del(K.fails); Store.del(K.lock);
-      toast("Respaldo importado. Desbloquea con su contraseña.","info");
-      lock();
-    }catch(e){ toast("Archivo inválido","err"); }
-  };
-  inp.click();
+  showPinModal(
+    "Importar respaldo",
+    "Ingresa la contraseña de respaldo para autorizar la importación.",
+    ()=>{
+      const inp=document.createElement("input"); inp.type="file"; inp.accept="application/json,.json";
+      inp.onchange=async ()=>{
+        const file=inp.files[0]; if(!file) return;
+        try{
+          const data=JSON.parse(await file.text());
+          if(!data.salt||!data.vault) throw 0;
+          const ok = await new Promise(res=>{
+            const ov=document.createElement("div"); ov.className="overlay";
+            ov.innerHTML=`<div class="modal" style="max-width:420px"><div class="modal-body"><h2 style="font-family:'Syne',sans-serif;font-size:19px;margin-bottom:10px">Importar respaldo</h2><p style="color:var(--txt-dim);font-size:14px;line-height:1.5;margin-bottom:18px">Esto reemplazará tu bóveda actual por la del archivo. Necesitarás la contraseña maestra de ESE respaldo para abrirlo.</p></div><div class="modal-foot"><button class="btn btn-ghost" id="iC">Cancelar</button><button class="btn btn-primary" id="iO">Reemplazar</button></div></div>`;
+            document.body.appendChild(ov);
+            ov.querySelector("#iC").onclick=()=>{ov.remove();res(false)};
+            ov.querySelector("#iO").onclick=()=>{ov.remove();res(true)};
+          });
+          if(!ok) return;
+          Store.set(K.salt, data.salt); Store.set(K.vault, data.vault);
+          Store.del(K.fails); Store.del(K.lock);
+          toast("Respaldo importado. Desbloquea con su contraseña.","info");
+          lock();
+        }catch(e){ toast("Archivo inválido","err"); }
+      };
+      inp.click();
+    }
+  );
 }
 function changePassword(){
   $("#menuPop")?.remove();

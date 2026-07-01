@@ -284,6 +284,7 @@ function lock(){
   cryptoKey=null; entries=[];
   clearTimeout(idleTimer);
   $("#unlockPw").value=""; $("#unlockMsg").textContent="";
+  unlockBtnReset($("#unlockBtn")); delete $("#unlockBtn").dataset.busy;
   $("#menuPop")?.remove();
   initGate();
 }

@@ -666,21 +666,27 @@ function exportEncrypted(){
   );
 }
 function exportPlain(){
-  const payload={
-    exportedAt:new Date().toISOString(),
-    total:entries.length,
-    accounts:entries.map(e=>({
-      title:e.title, category:CAT_LABEL[e.category]||e.category,
-      username:e.username, password:e.password,
-      url:e.url||"", notes:e.notes||"",
-      expiresAt:e.expiresAt||"", favorite:e.favorite||false
-    }))
-  };
-  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
-  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
-  a.download="jampierdev-legible-"+new Date().toISOString().slice(0,10)+".json"; a.click();
-  URL.revokeObjectURL(a.href);
-  toast("Exportación legible descargada");
+  showPinModal(
+    "Exportar legible",
+    "Ingresa la contraseña de respaldo para autorizar la descarga.",
+    async ()=>{
+      const payload={
+        exportedAt:new Date().toISOString(),
+        total:entries.length,
+        accounts:entries.map(e=>({
+          title:e.title, category:CAT_LABEL[e.category]||e.category,
+          username:e.username, password:e.password,
+          url:e.url||"", notes:e.notes||"",
+          expiresAt:e.expiresAt||"", favorite:e.favorite||false
+        }))
+      };
+      const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+      const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+      a.download="jampierdev-legible-"+new Date().toISOString().slice(0,10)+".json"; a.click();
+      URL.revokeObjectURL(a.href);
+      toast("Exportación legible descargada");
+    }
+  );
 }
 function importVault(){
   $("#menuPop")?.remove();

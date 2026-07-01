@@ -139,15 +139,36 @@ function refreshAttempts(){
 let lockoutTimer=null;
 function startLockout(until){
   showGatePanel("lockoutPanel");
+  $("#lockoutReadyBtn").classList.add("hidden");
+  const countEl = $("#lockoutCount");
+  countEl.style.color = ""; countEl.style.textShadow = "";
+  $("#lockoutTitle").textContent = "Acceso bloqueado";
+  $("#lockoutSub").textContent = "Demasiados intentos fallidos. Espera a que el contador llegue a cero para volver a intentar.";
+  $("#lockoutBadge").style.background = ""; $("#lockoutBadge").style.borderColor = ""; $("#lockoutBadge").style.color = "";
+  $("#lockoutCountLabel").textContent = "Bloqueo temporal de seguridad";
   clearInterval(lockoutTimer);
   const tick = ()=>{
     const left = until - Date.now();
-    if(left<=0){ clearInterval(lockoutTimer); Store.del(K.lock); Store.del(K.fails); initGate(); return; }
+    if(left<=0){
+      clearInterval(lockoutTimer); Store.del(K.lock); Store.del(K.fails);
+      countEl.textContent = "00:00";
+      countEl.style.color = "var(--ok)";
+      countEl.style.textShadow = "0 0 28px rgba(82,224,168,.6)";
+      $("#lockoutTitle").textContent = "¡Bloqueo levantado!";
+      $("#lockoutSub").textContent = "Ya puedes volver a iniciar sesión.";
+      $("#lockoutBadge").style.background = "rgba(82,224,168,.12)";
+      $("#lockoutBadge").style.borderColor = "rgba(82,224,168,.3)";
+      $("#lockoutBadge").style.color = "var(--ok)";
+      $("#lockoutCountLabel").textContent = "Tiempo de espera completado";
+      $("#lockoutReadyBtn").classList.remove("hidden");
+      return;
+    }
     const m = Math.floor(left/60000), s = Math.floor((left%60000)/1000);
-    $("#lockoutCount").textContent = String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+    countEl.textContent = String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
   };
   tick(); lockoutTimer = setInterval(tick,1000);
 }
+$("#lockoutReadyBtn").addEventListener("click", initGate);
 
 /* ===== setup ===== */
 $("#setupPw").addEventListener("input", e=>paintMeter(e.target.value));
@@ -366,7 +387,6 @@ function openModal(id){
   $("#copyPassBtn").onclick = ()=>{ const v=$("#fPass").value; v?copy(v,true):toast("Campo vacío","err"); };
   const close = ()=>ov.remove();
   $("#modalClose").onclick=close; $("#modalCancel").onclick=close;
-  ov.addEventListener("click", ev=>{ if(ev.target===ov) close(); });
   $("#modalSave").onclick = saveEntry;
   setTimeout(()=>$("#fTitle").focus(),100);
 }
@@ -504,7 +524,25 @@ function changePassword(){
 ["addBtnTop","addBtnEmpty","fab"].forEach(id=>{ const el=$("#"+id); if(el) el.onclick=()=>openModal(null); });
 $("#lockBtn").onclick=lock;
 $("#searchInput").addEventListener("input", render);
-function resetIdle(){ clearTimeout(idleTimer); idleTimer=setTimeout(()=>{ if(cryptoKey){ lock(); toast("Bóveda bloqueada por inactividad","info"); } }, IDLE_MS); }
+function showIdleModal(){
+  const ov = document.createElement("div"); ov.className="overlay"; ov.id="idleOverlay";
+  ov.innerHTML=`
+    <div class="modal" style="max-width:380px">
+      <div class="modal-body" style="text-align:center;padding:38px 28px 10px">
+        <div class="idle-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/><circle cx="12" cy="16" r="1.2" fill="currentColor"/></svg>
+        </div>
+        <h2 style="font-family:'Syne',sans-serif;font-size:21px;margin:18px 0 10px">Sesión cerrada</h2>
+        <p style="color:var(--txt-dim);font-size:14px;line-height:1.7;margin-bottom:0">Tu bóveda se bloqueó automáticamente<br>por <b style="color:var(--txt)">5 minutos sin actividad</b>.<br>Vuelve a iniciar sesión para acceder.</p>
+      </div>
+      <div class="modal-foot" style="padding-top:24px">
+        <button class="btn btn-primary" id="idleBtn">Iniciar sesión</button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+  document.getElementById("idleBtn").onclick = ()=>ov.remove();
+}
+function resetIdle(){ clearTimeout(idleTimer); idleTimer=setTimeout(()=>{ if(cryptoKey){ lock(); showIdleModal(); } }, IDLE_MS); }
 ["click","keydown","mousemove","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{ if(cryptoKey) resetIdle(); }, {passive:true}));
 document.addEventListener("keydown", e=>{ if(e.key==="Escape") $(".overlay")?.remove(); });
 

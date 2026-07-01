@@ -74,12 +74,18 @@
 
     <!-- LOCKOUT -->
     <div id="lockoutPanel" class="panel hidden">
-      <h2 style="color:var(--danger)">Acceso bloqueado</h2>
-      <p class="sub">Demasiados intentos fallidos. Espera a que termine el contador para volver a intentar.</p>
-      <div class="lockout">
-        <div class="count" id="lockoutCount">05:00</div>
-        <p>Bloqueo temporal de seguridad</p>
+      <div class="lockout-top">
+        <div class="lockout-badge" id="lockoutBadge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/><circle cx="12" cy="16" r="1.2" fill="currentColor"/></svg>
+        </div>
+        <h2 id="lockoutTitle">Acceso bloqueado</h2>
+        <p class="sub" id="lockoutSub">Demasiados intentos fallidos. Espera a que el contador llegue a cero para volver a intentar.</p>
       </div>
+      <div class="lockout" id="lockoutTimerBox">
+        <div class="count" id="lockoutCount">05:00</div>
+        <p id="lockoutCountLabel">Bloqueo temporal de seguridad</p>
+      </div>
+      <button id="lockoutReadyBtn" class="btn btn-primary hidden" style="margin-top:6px">Iniciar sesión</button>
     </div>
   </div>
 </div>

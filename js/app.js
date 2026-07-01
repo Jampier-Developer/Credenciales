@@ -47,6 +47,9 @@ async function decryptVault(key, str){
 let cryptoKey = null;     // never persisted
 let entries = [];
 let activeFilter = "all";
+let activeSort = "date";
+let viewMode = Store.get("nox_view") || "grid";
+let currentTheme = Store.get("nox_theme") || "dark";
 let editingId = null;
 let pickedCat = "email";
 let idleTimer = null;
@@ -274,6 +277,9 @@ function openApp(){
   $("#gate").classList.add("hidden");
   $("#app").style.display="flex";
   buildChips();
+  initSortBar();
+  applyTheme(currentTheme);
+  applyView(viewMode);
   render();
   resetIdle();
   if(!Store.persistent){
@@ -295,54 +301,110 @@ async function persist(){
 }
 
 function buildChips(){
-  const all = entries.length;
-  let html = `<button class="chip ${activeFilter==='all'?'active':''}" data-f="all">Todas <span class="n">${all}</span></button>`;
+  const all=entries.length, favN=entries.filter(e=>e.favorite).length;
+  let html=`<button class="chip ${activeFilter==="all"?"active":""}" data-f="all">Todas <span class="n">${all}</span></button>`;
+  if(favN>0) html+=`<button class="chip fav-chip ${activeFilter==="fav"?"active":""}" data-f="fav">★ Favoritas <span class="n">${favN}</span></button>`;
   CATS.forEach(c=>{
-    const n = entries.filter(e=>e.category===c.id).length;
-    html += `<button class="chip ${activeFilter===c.id?'active':''}" data-f="${c.id}">${ICON[c.id]} ${c.label} <span class="n">${n}</span></button>`;
+    const n=entries.filter(e=>e.category===c.id).length;
+    html+=`<button class="chip ${activeFilter===c.id?"active":""}" data-f="${c.id}">${ICON[c.id]} ${c.label} <span class="n">${n}</span></button>`;
   });
-  $("#chips").innerHTML = html;
+  $("#chips").innerHTML=html;
   $("#chips").querySelectorAll(".chip").forEach(ch=>ch.onclick=()=>{ activeFilter=ch.dataset.f; buildChips(); render(); });
 }
 
+function expiryInfo(date){
+  if(!date) return null;
+  const diff = new Date(date+"T23:59:00") - new Date();
+  const days = Math.ceil(diff/(1000*60*60*24));
+  if(days<0) return {label:`Venció hace ${Math.abs(days)}d`,cls:"exp-red"};
+  if(days===0) return {label:"Vence hoy",cls:"exp-red"};
+  if(days<=7) return {label:`Vence en ${days}d`,cls:"exp-red"};
+  if(days<=30) return {label:`Vence en ${days}d`,cls:"exp-yellow"};
+  return {label:new Date(date).toLocaleDateString("es",{day:"2-digit",month:"short",year:"numeric"}),cls:"exp-ok"};
+}
+function sortedList(list){
+  const fav=(a,b)=>(b.favorite?1:0)-(a.favorite?1:0);
+  if(activeSort==="az") return list.sort((a,b)=>fav(a,b)||a.title.localeCompare(b.title,"es"));
+  if(activeSort==="cat") return list.sort((a,b)=>fav(a,b)||a.category.localeCompare(b.category));
+  return list.sort((a,b)=>fav(a,b)||(b.updatedAt||0)-(a.updatedAt||0));
+}
+const FAV_SVG = (on)=>`<svg viewBox="0 0 24 24" fill="${on?'currentColor':'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+
 function render(){
   const q = $("#searchInput").value.trim().toLowerCase();
-  let list = entries.slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
-  if(activeFilter!=="all") list = list.filter(e=>e.category===activeFilter);
-  if(q) list = list.filter(e=> (e.title+" "+e.username+" "+e.url+" "+e.notes+" "+CAT_LABEL[e.category]).toLowerCase().includes(q));
+  let list = entries.slice();
+  if(activeFilter==="fav") list=list.filter(e=>e.favorite);
+  else if(activeFilter!=="all") list=list.filter(e=>e.category===activeFilter);
+  if(q) list=list.filter(e=>(e.title+" "+e.username+" "+e.url+" "+e.notes+" "+CAT_LABEL[e.category]).toLowerCase().includes(q));
+  list=sortedList(list);
 
-  const grid = $("#grid"), empty = $("#empty");
+  const grid=$("#grid"), empty=$("#empty");
+  const cnt=$("#vaultCount"); if(cnt) cnt.textContent=entries.length?`${entries.length} cuenta${entries.length!==1?"s":""}` : "";
+  grid.className = viewMode==="list" ? "list-view" : "grid";
+
   if(entries.length===0){ grid.innerHTML=""; empty.classList.remove("hidden"); return; }
   empty.classList.add("hidden");
-  if(list.length===0){ grid.innerHTML = `<div class="empty" style="grid-column:1/-1;padding:50px 20px"><h3>Sin resultados</h3><p>No hay cuentas que coincidan con tu búsqueda o filtro.</p></div>`; return; }
+  if(list.length===0){ grid.innerHTML=`<div class="empty" style="${viewMode==="list"?"":"grid-column:1/-1"}padding:50px 20px"><h3>Sin resultados</h3><p>No hay cuentas que coincidan.</p></div>`; return; }
 
-  grid.innerHTML = list.map((e,i)=>{
-    const pwDots = "•".repeat(Math.min(12, Math.max(8,(e.password||"").length||10)));
-    return `
-    <div class="card" data-cat="${e.category}" style="animation-delay:${i*40}ms">
-      <div class="card-head">
-        <div class="cat-ico ${e.category}">${ICON[e.category]}</div>
-        <div class="t"><h3>${esc(e.title)}</h3><span class="badge">${CAT_LABEL[e.category]}</span></div>
-      </div>
-      ${e.username?`<div class="row"><span class="rk">Usuario</span><span class="rv">${esc(e.username)}</span><button class="mini" data-copy="${esc(e.username)}" title="Copiar">${ICON.copy}</button></div>`:""}
-      ${e.password?`<div class="row"><span class="rk">Clave</span><span class="rv dots" data-pw="${esc(e.password)}">${pwDots}</span><button class="mini" data-reveal title="Ver">${ICON.eyeOpen}</button><button class="mini" data-copy="${esc(e.password)}" data-sensitive="1" title="Copiar">${ICON.copy}</button></div>`:""}
-      ${e.url?`<div class="row"><span class="rk">Enlace</span><span class="rv"><a href="${/^https?:\/\//.test(e.url)?esc(e.url):'https://'+esc(e.url)}" target="_blank" rel="noopener">${esc(e.url)}</a></span><button class="mini" data-copy="${esc(e.url)}" title="Copiar">${ICON.copy}</button></div>`:""}
-      ${e.notes?`<div class="notes-row">${esc(e.notes)}</div>`:""}
-      <div class="card-foot">
-        <button class="edit" data-edit="${e.id}">${ICON.edit} Editar</button>
-        <button class="del" data-del="${e.id}">${ICON.trash} Borrar</button>
-      </div>
-    </div>`;
-  }).join("");
+  if(viewMode==="list"){
+    grid.innerHTML=list.map((e,i)=>{
+      const exp=expiryInfo(e.expiresAt);
+      const pwDots="•".repeat(Math.min(12,Math.max(8,(e.password||"").length||10)));
+      return `<div class="list-card" data-cat="${e.category}" style="animation-delay:${i*30}ms">
+        <button class="fav-btn${e.favorite?" active":""}" data-fav="${e.id}" title="${e.favorite?"Quitar favorito":"Favorito"}">${FAV_SVG(e.favorite)}</button>
+        <div class="cat-ico ${e.category}" style="width:36px;height:36px;border-radius:10px;flex-shrink:0">${ICON[e.category]}</div>
+        <div class="list-info">
+          <span class="list-title">${esc(e.title)}</span>
+          <span class="list-sub">${CAT_LABEL[e.category]}${e.username?" · "+esc(e.username):""}${exp?` · <span class="${exp.cls}">${exp.label}</span>`:""}</span>
+        </div>
+        <div class="list-actions">
+          ${e.password?`<span class="list-pw-dots" data-pw="${esc(e.password)}">${pwDots}</span><button class="mini" data-reveal title="Ver">${ICON.eyeOpen}</button><button class="mini" data-copy="${esc(e.password)}" data-sensitive="1" title="Copiar clave">${ICON.copy}</button>`:""}
+          <button class="mini" data-edit="${e.id}" title="Editar">${ICON.edit}</button>
+          <button class="mini" data-del="${e.id}" title="Borrar" style="color:var(--danger-soft)">${ICON.trash}</button>
+        </div>
+      </div>`;
+    }).join("");
+  } else {
+    grid.innerHTML=list.map((e,i)=>{
+      const pwDots="•".repeat(Math.min(12,Math.max(8,(e.password||"").length||10)));
+      const exp=expiryInfo(e.expiresAt);
+      return `<div class="card" data-cat="${e.category}" style="animation-delay:${i*40}ms">
+        <div class="card-head">
+          <div class="cat-ico ${e.category}">${ICON[e.category]}</div>
+          <div class="t"><h3>${esc(e.title)}</h3><span class="badge">${CAT_LABEL[e.category]}</span></div>
+          <button class="fav-btn${e.favorite?" active":""}" data-fav="${e.id}" title="${e.favorite?"Quitar favorito":"Favorito"}">${FAV_SVG(e.favorite)}</button>
+        </div>
+        ${e.username?`<div class="row"><span class="rk">Usuario</span><span class="rv dbl-copy" data-val="${esc(e.username)}">${esc(e.username)}</span><button class="mini" data-copy="${esc(e.username)}" title="Copiar">${ICON.copy}</button></div>`:""}
+        ${e.password?`<div class="row"><span class="rk">Clave</span><span class="rv dots" data-pw="${esc(e.password)}">${pwDots}</span><button class="mini" data-reveal title="Ver">${ICON.eyeOpen}</button><button class="mini" data-copy="${esc(e.password)}" data-sensitive="1" title="Copiar">${ICON.copy}</button></div>`:""}
+        ${e.url?`<div class="row"><span class="rk">Enlace</span><span class="rv"><a href="${/^https?:\/\//.test(e.url)?esc(e.url):"https://"+esc(e.url)}" target="_blank" rel="noopener">${esc(e.url)}</a></span><button class="mini" data-copy="${esc(e.url)}" title="Copiar">${ICON.copy}</button></div>`:""}
+        ${exp?`<div class="row"><span class="rk">Vence</span><span class="rv ${exp.cls}">${exp.label}</span></div>`:""}
+        ${e.notes?`<div class="notes-row">${esc(e.notes)}</div>`:""}
+        <div class="card-foot">
+          <button class="edit" data-edit="${e.id}">${ICON.edit} Editar</button>
+          <button class="del" data-del="${e.id}">${ICON.trash} Borrar</button>
+        </div>
+      </div>`;
+    }).join("");
+  }
 
-  grid.querySelectorAll("[data-copy]").forEach(b=>b.onclick=()=>copy(b.dataset.copy, b.dataset.sensitive==="1"));
+  grid.querySelectorAll("[data-copy]").forEach(b=>b.onclick=()=>copy(b.dataset.copy,b.dataset.sensitive==="1"));
   grid.querySelectorAll("[data-reveal]").forEach(b=>b.onclick=()=>{
-    const span = b.parentElement.querySelector("[data-pw]");
-    if(span.dataset.shown){ span.textContent="•".repeat(Math.min(12,Math.max(8,span.dataset.pw.length))); delete span.dataset.shown; span.classList.add("dots"); b.innerHTML=ICON.eyeOpen; }
-    else{ span.textContent=span.dataset.pw; span.dataset.shown="1"; span.classList.remove("dots"); b.innerHTML=ICON.eyeOff; }
+    const span=b.parentElement.querySelector("[data-pw]");
+    if(span.dataset.shown){span.textContent="•".repeat(Math.min(12,Math.max(8,span.dataset.pw.length)));delete span.dataset.shown;span.classList.add("dots");b.innerHTML=ICON.eyeOpen;}
+    else{span.textContent=span.dataset.pw;span.dataset.shown="1";span.classList.remove("dots");b.innerHTML=ICON.eyeOff;}
   });
   grid.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>openModal(b.dataset.edit));
   grid.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>confirmDelete(b.dataset.del));
+  grid.querySelectorAll("[data-fav]").forEach(b=>b.onclick=async ev=>{
+    ev.stopPropagation();
+    const idx=entries.findIndex(x=>x.id===b.dataset.fav);
+    if(idx>-1){entries[idx].favorite=!entries[idx].favorite;await persist();buildChips();render();}
+  });
+  grid.querySelectorAll(".dbl-copy").forEach(span=>{
+    span.title="Doble clic para copiar";
+    span.ondblclick=()=>copy(span.dataset.val,false);
+    span.style.cursor="pointer";
+  });
 }
 
 /* ===================== modal (add/edit) ===================== */
@@ -374,6 +436,8 @@ function openModal(id){
         </div>
         <div class="field"><label>Enlace / Sitio (opcional)</label><input id="fUrl" class="inp" placeholder="facebook.com" value="${e?esc(e.url):""}"></div>
         <div class="field"><label>Notas (N° de cuenta, recuperación…)</label><textarea id="fNotes" class="inp" placeholder="Información extra, segura y privada">${e?esc(e.notes):""}</textarea></div>
+        <div class="field"><label>Fecha de vencimiento (opcional)</label><input id="fExpiry" class="inp" type="date" value="${e&&e.expiresAt?e.expiresAt:""}"></div>
+        ${id&&e&&e.passwordHistory&&e.passwordHistory.length?`<div class="field"><label>Historial de contraseñas</label><div class="pw-history">${e.passwordHistory.map(p=>`<div class="pw-hist-row"><span class="rv dots" style="flex:1;font-size:13px">${"•".repeat(Math.min(12,p.length))}</span><button class="mini hist-restore" data-pw="${esc(p)}" title="Restaurar">${ICON.edit}</button></div>`).join("")}</div></div>`:""}
       </div>
       <div class="modal-foot">
         <button class="btn btn-ghost" id="modalCancel">Cancelar</button>
@@ -386,6 +450,7 @@ function openModal(id){
   cp.innerHTML = CATS.map(c=>`<button class="cat-opt ${c.id===pickedCat?'sel':''}" data-cat="${c.id}">${ICON[c.id]}<span>${c.label}</span></button>`).join("");
   cp.querySelectorAll(".cat-opt").forEach(b=>b.onclick=()=>{ pickedCat=b.dataset.cat; cp.querySelectorAll(".cat-opt").forEach(x=>x.classList.toggle("sel",x===b)); });
 
+  document.querySelectorAll(".hist-restore").forEach(b=>b.onclick=()=>{ $("#fPass").value=b.dataset.pw; $("#fPass").type="text"; $("#fPass").parentElement.querySelector(".eye").innerHTML=ICON.eyeOff; toast("Contraseña restaurada del historial","info"); });
   $("#genBtn").onclick = ()=>{ const p=genPassword(18); $("#fPass").value=p; $("#fPass").type="text"; $("#fPass").parentElement.querySelector(".eye").innerHTML=ICON.eyeOff; toast("Contraseña generada"); };
   $("#copyPassBtn").onclick = ()=>{ const v=$("#fPass").value; v?copy(v,true):toast("Campo vacío","err"); };
   const close = ()=>ov.remove();
@@ -406,10 +471,25 @@ async function saveEntry(){
   const data={
     category:pickedCat, title,
     username:$("#fUser").value.trim(), password:$("#fPass").value,
-    url:$("#fUrl").value.trim(), notes:$("#fNotes").value.trim(), updatedAt:Date.now()
+    url:$("#fUrl").value.trim(), notes:$("#fNotes").value.trim(),
+    expiresAt:$("#fExpiry").value||"",
+    updatedAt:Date.now()
   };
-  if(editingId){ const i=entries.findIndex(x=>x.id===editingId); if(i>-1) entries[i]={...entries[i],...data}; }
-  else { data.id="e_"+Date.now().toString(36)+Math.random().toString(36).slice(2,7); entries.push(data); }
+  if(editingId){
+    const i=entries.findIndex(x=>x.id===editingId);
+    if(i>-1){
+      const old=entries[i];
+      const hist=[...(old.passwordHistory||[])];
+      if(data.password && data.password!==old.password && old.password) hist.unshift(old.password);
+      data.passwordHistory=hist.slice(0,3);
+      data.favorite=old.favorite||false;
+      entries[i]={...old,...data};
+    }
+  } else {
+    data.id="e_"+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+    data.passwordHistory=[]; data.favorite=false;
+    entries.push(data);
+  }
   await persist();
   $("#modalOverlay")?.remove();
   buildChips(); render();
@@ -574,6 +654,46 @@ function changePassword(){
   };
 }
 
+/* ===== theme ===== */
+const ICON_SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
+const ICON_MOON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+function applyTheme(t){
+  document.documentElement.setAttribute("data-theme",t);
+  Store.set("nox_theme",t); currentTheme=t;
+  const btn=$("#themeBtn"); if(btn) btn.innerHTML=t==="dark"?ICON_SUN:ICON_MOON;
+}
+function toggleTheme(){ applyTheme(currentTheme==="dark"?"light":"dark"); }
+
+/* ===== view (grid / list) ===== */
+const ICON_GRID_V='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>';
+const ICON_LIST_V='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg>';
+function applyView(v){
+  viewMode=v; Store.set("nox_view",v);
+  const btn=$("#viewBtn"); if(btn) btn.innerHTML=v==="grid"?ICON_LIST_V:ICON_GRID_V;
+  render();
+}
+function toggleView(){ applyView(viewMode==="grid"?"list":"grid"); }
+
+/* ===== fullscreen ===== */
+const ICON_FS_ON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>';
+const ICON_FS_OFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>';
+function toggleFullscreen(){
+  if(!document.fullscreenElement) document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();
+  else document.exitFullscreen&&document.exitFullscreen();
+}
+document.addEventListener("fullscreenchange",()=>{
+  const btn=$("#fullscreenBtn"); if(btn) btn.innerHTML=document.fullscreenElement?ICON_FS_OFF:ICON_FS_ON;
+});
+
+/* ===== sort bar ===== */
+function initSortBar(){
+  const bar=$("#sortBar"); if(!bar) return;
+  bar.querySelectorAll(".sort-btn").forEach(b=>{
+    b.classList.toggle("active",b.dataset.sort===activeSort);
+    b.onclick=()=>{ activeSort=b.dataset.sort; initSortBar(); render(); };
+  });
+}
+
 /* ===== add buttons + idle autolock ===== */
 ["addBtnTop","addBtnEmpty","fab"].forEach(id=>{ const el=$("#"+id); if(el) el.onclick=()=>openModal(null); });
 $("#lockBtn").onclick=lock;
@@ -600,5 +720,10 @@ function resetIdle(){ clearTimeout(idleTimer); idleTimer=setTimeout(()=>{ if(cry
 ["click","keydown","mousemove","touchstart"].forEach(ev=>document.addEventListener(ev,()=>{ if(cryptoKey) resetIdle(); }, {passive:true}));
 document.addEventListener("keydown", e=>{ if(e.key==="Escape") $(".overlay")?.remove(); });
 
+$("#themeBtn").addEventListener("click", toggleTheme);
+$("#viewBtn").addEventListener("click", toggleView);
+$("#fullscreenBtn").addEventListener("click", toggleFullscreen);
+
 /* ===================== go ===================== */
+applyTheme(currentTheme);
 initGate();

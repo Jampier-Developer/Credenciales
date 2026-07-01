@@ -26,7 +26,8 @@ Gestor de contraseñas privado, local y cifrado. Sin backend, sin cuentas, sin s
 - Exportar e importar respaldo cifrado (JSON) con contraseña de respaldo protegida
 - Cambiar contraseña maestra sin perder datos
 - Responsive completo: móvil, tablet, desktop e iOS (safe-area, notch, home indicator)
-- Modal de confirmación de borrado centrado en todas las pantallas
+- Modal de confirmación de borrado centrado en todas las pantallas (no más bottom sheet en móvil)
+- **Tema claro mejorado**: chips, tarjetas, sort buttons y topbar con contraste correcto
 - 100% offline — funciona sin conexión a internet
 - Invisible para buscadores (noindex, robots.txt, X-Robots-Tag)
 

@@ -9,7 +9,7 @@ Gestor de contraseñas privado, local y cifrado. Sin backend, sin cuentas, sin s
 - Bloqueo automático tras 5 intentos fallidos con cuenta regresiva de 5 min
 - Modal de bloqueo levantado: avisa cuando ya puedes volver a intentar
 - Cierre de sesión automático por 5 minutos de inactividad con modal informativo
-- El formulario de nueva cuenta no se cierra al hacer clic afuera (sin pérdida de datos)
+- El formulario de nueva cuenta no se cierra al hacer clic afuera
 - Categorías: Correos, Redes, Bancos, Streaming, Otros
 - **Cuentas favoritas**: marca con estrella y filtra por favoritas
 - **Ordenar**: por fecha, A–Z o categoría
@@ -22,9 +22,9 @@ Gestor de contraseñas privado, local y cifrado. Sin backend, sin cuentas, sin s
 - **Doble clic en usuario** para copiarlo (vista cuadrícula)
 - Generador de contraseñas seguras de 18 caracteres
 - Copiar contraseñas al portapapeles (auto-borra a los 30s)
-- Exportar e importar respaldo cifrado (JSON) con contraseña de respaldo
+- Exportar e importar respaldo cifrado (JSON) con contraseña de respaldo protegida
 - Cambiar contraseña maestra sin perder datos
-- Diseño responsive — funciona en móvil, tablet y desktop
+- Responsive completo: móvil, tablet, desktop e iOS (safe-area, notch, home indicator)
 - 100% offline — funciona sin conexión a internet
 - Invisible para buscadores (noindex, robots.txt, X-Robots-Tag)
 
@@ -47,7 +47,7 @@ Gestor de contraseñas privado, local y cifrado. Sin backend, sin cuentas, sin s
 - La clave se deriva con PBKDF2 usando un salt aleatorio distinto por bóveda
 - La contraseña maestra vive solo en memoria mientras la sesión está activa
 - Al bloquear o cerrar la sesión, la clave se elimina de memoria
-- Exportar/Importar protegido con contraseña adicional (hash SHA-256, no visible en el código)
+- Exportar/Importar protegido con contraseña adicional (hash SHA-256, no visible en código)
 - Invisible para motores de búsqueda
 
 ## Instalación local
